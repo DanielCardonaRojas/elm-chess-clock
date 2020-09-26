@@ -7,6 +7,7 @@ import Msg exposing (..)
 import Platform.Cmd as Cmd
 import Time
 import View exposing (view)
+import Utils exposing (iff)
 
 
 main =
@@ -39,22 +40,17 @@ update msg model =
             ( model, Cmd.none )
 
         SwitchPlayer ->
-            ( { model | turn = Player.switch model.turn }, Cmd.none )
+            ( { model | turn = Player.switch model.turn
+                , player1MoveCount = iff (model.turn == Player1) (model.player1MoveCount + 1) (model.player1MoveCount)
+                , player2MoveCount = iff (model.turn == Player2) (model.player2MoveCount + 1) (model.player2MoveCount)
+             }, Cmd.none )
 
         Tick ->
             ( { model
                 | player1Ticks =
-                    if model.turn == Player1 then
-                        model.player1Ticks + 1
-
-                    else
-                        model.player1Ticks
+                    iff (model.turn == Player1) (model.player1Ticks + 1) model.player1Ticks
                 , player2Ticks =
-                    if model.turn == Player2 then
-                        model.player2Ticks + 1
-
-                    else
-                        model.player2Ticks
+                    iff (model.turn == Player2) (model.player2Ticks + 1) model.player2Ticks
               }
             , Cmd.none
             )

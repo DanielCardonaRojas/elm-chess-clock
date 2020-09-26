@@ -9,15 +9,8 @@ import Element.Events as Event
 import Element.Font as Font
 import Model exposing (..)
 import Msg exposing (..)
+import Utils exposing (iff)
 
-
-iff : Bool -> a -> a -> a
-iff condition trueValue falseValue =
-    if condition then
-        trueValue
-
-    else
-        falseValue
 
 
 view model =
@@ -30,32 +23,38 @@ applicationUI model =
         canTapTile player =
             model.turn == player && not model.paused
     in
-    el [ width fill, height fill ] <|
-        column [ width fill, height fill, padding 10, spacing 8 ]
-            [ renderTimeTile (canTapTile Player1) (Model.remainingTime model Player1)
+    el [ width fill, height fill, padding 10] <|
+        column [ width fill, height fill, spacing 10]
+            [ renderTimeTile { isActive = canTapTile Player2 
+                , rotated = True 
+                , remainingTime = Model.remainingTime model Player2 
+                , moves = model.player2MoveCount }  
             , pauseResumeButton <| not model.paused
-            , renderTimeTile (canTapTile Player2) (Model.remainingTime model Player2)
+            , renderTimeTile { isActive = canTapTile Player1
+                , rotated = False
+                , remainingTime = Model.remainingTime model Player1
+                , moves = model.player1MoveCount
+            }
             ]
 
 
-renderTimeTile : Bool -> String -> Element Msg
-renderTimeTile isActive remainingTime =
+renderTimeTile : {isActive: Bool, rotated: Bool, remainingTime: String, moves: Int}  -> Element Msg
+renderTimeTile {isActive, rotated, remainingTime, moves } =
     el
         [ Event.onClick <| iff isActive SwitchPlayer NoOp
+        -- , Element.explain Debug.todo
         , centerX
+        , rotate <| iff rotated 3.14156 0
         , height <| fillPortion 2
         , width fill
         , Border.rounded 8
-        , Background.color <|
-            if isActive then
-                rgb255 187 120 38
-
-            else
-                rgb 0.1 0.1 0.1
+        , Element.inFront <| el [alignBottom, alignRight, padding 30] (text <| "Moves: " ++ String.fromInt moves)
+        , Background.color <| iff isActive (rgb255 187 120 38) (rgb 0.1 0.1 0.1)
         , Font.color <| rgb 1 1 1
         ]
     <|
-        el [ centerX, centerY ] (text remainingTime)
+        el [ centerX, centerY, Font.size 48] (text remainingTime)
+        
 
 
 pauseResumeButton : Bool -> Element Msg

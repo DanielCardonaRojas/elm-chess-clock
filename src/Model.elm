@@ -8,6 +8,8 @@ type alias Model =
     { turn : Player
     , player1Ticks : Int
     , player2Ticks : Int
+    , player1MoveCount : Int
+    , player2MoveCount : Int
     , clockMode : ClockMode
     , tickLength : TypedTime
     , totalTime : TypedTime
@@ -20,6 +22,8 @@ initialModel =
     { turn = Player1
     , player1Ticks = 0
     , player2Ticks = 0
+    , player1MoveCount = 0
+    , player2MoveCount = 0
     , clockMode = ClockMode
     , tickLength = TypedTime.milliseconds 100
     , totalTime = TypedTime.seconds 40
