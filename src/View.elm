@@ -23,7 +23,7 @@ applicationUI model =
         canTapTile player =
             model.turn == player && not model.paused
     in
-    el [ width fill, height fill, padding 10] <|
+    el [ width fill, height fill, padding 20] <|
         column [ width fill, height fill, spacing 10]
             [ renderTimeTile { isActive = canTapTile Player2 
                 , rotated = True 
