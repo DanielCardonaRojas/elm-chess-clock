@@ -11,6 +11,19 @@ type alias Model =
     , clockMode : ClockMode
     , tickLength : TypedTime
     , totalTime : TypedTime
+    , paused : Bool
+    }
+
+
+initialModel : Model
+initialModel =
+    { turn = Player1
+    , player1Ticks = 0
+    , player2Ticks = 0
+    , clockMode = ClockMode
+    , tickLength = TypedTime.milliseconds 100
+    , totalTime = TypedTime.seconds 40
+    , paused = False
     }
 
 

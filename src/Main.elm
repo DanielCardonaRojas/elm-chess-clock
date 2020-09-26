@@ -6,7 +6,6 @@ import Model exposing (..)
 import Msg exposing (..)
 import Platform.Cmd as Cmd
 import Time
-import TypedTime
 import View exposing (view)
 
 
@@ -21,22 +20,16 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    let
-        initialModel =
-            { turn = Player1
-            , player1Ticks = 0
-            , player2Ticks = 0
-            , clockMode = ClockMode
-            , tickLength = TypedTime.milliseconds 100
-            , totalTime = TypedTime.seconds 40
-            }
-    in
-    ( initialModel, Cmd.none )
+    ( Model.initialModel, Cmd.none )
 
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Time.every 100 (\_ -> Tick)
+    if model.paused then
+        Sub.none
+
+    else
+        Time.every 100 (\_ -> Tick)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -65,3 +58,9 @@ update msg model =
               }
             , Cmd.none
             )
+
+        Pause ->
+            ( { model | paused = True }, Cmd.none )
+
+        Resume ->
+            ( { model | paused = False }, Cmd.none )
