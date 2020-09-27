@@ -9,7 +9,7 @@ import Utils exposing (iff)
 
 
 type alias Model =
-    { turn : Player
+    { turn : Maybe Player
     , player1Time : TypedTime -- Total amount of clock ticks accumulated
     , player2Time : TypedTime
     , player1PartialTime : TypedTime -- Amount of clock ticks accumulated until moves
@@ -25,13 +25,13 @@ type alias Model =
 
 initialModel : Int -> Model
 initialModel minutes =
-    { turn = Player1
+    { turn = Nothing
     , player1Time = TypedTime.minutes <| toFloat minutes
     , player2Time = TypedTime.minutes <| toFloat minutes
     , player1PartialTime = TypedTime.zero
     , player2PartialTime = TypedTime.zero
     , player1MoveCount = 0
-    , displaySettings = False
+    , displaySettings = True
     , player2MoveCount = 0
     , clockMode =
         { timeControl = Fisher
@@ -39,7 +39,7 @@ initialModel minutes =
         , duration = TypedTime.minutes <| toFloat minutes
         }
     , tickLength = TypedTime.milliseconds 100
-    , paused = False
+    , paused = True
     }
 
 
@@ -76,11 +76,18 @@ remainingTime model player =
             TypedTime.toString Seconds model.player2Time
 
 
+isPlayerTurn : Player -> Model -> Bool
+isPlayerTurn player model =
+    model.turn
+        |> Maybe.map (\turn -> turn == player)
+        |> Maybe.withDefault False
+
+
 incrementMoves : Model -> Model
 incrementMoves model =
     { model
-        | player1MoveCount = iff (model.turn == Player1) (model.player1MoveCount + 1) model.player1MoveCount
-        , player2MoveCount = iff (model.turn == Player2) (model.player2MoveCount + 1) model.player2MoveCount
+        | player1MoveCount = iff (isPlayerTurn Player1 model) (model.player1MoveCount + 1) model.player1MoveCount
+        , player2MoveCount = iff (isPlayerTurn Player2 model) (model.player2MoveCount + 1) model.player2MoveCount
     }
 
 
@@ -88,13 +95,13 @@ incrementTime : Model -> Model
 incrementTime model =
     { model
         | player1Time =
-            iff (model.turn == Player1) (TypedTime.sub model.player1Time model.tickLength) model.player1Time
+            iff (isPlayerTurn Player1 model) (TypedTime.sub model.player1Time model.tickLength) model.player1Time
         , player1PartialTime =
-            iff (model.turn == Player1) (TypedTime.add model.player1PartialTime model.tickLength) TypedTime.zero
+            iff (isPlayerTurn Player1 model) (TypedTime.add model.player1PartialTime model.tickLength) TypedTime.zero
         , player2Time =
-            iff (model.turn == Player2) (TypedTime.sub model.player2Time model.tickLength) model.player2Time
+            iff (isPlayerTurn Player2 model) (TypedTime.sub model.player2Time model.tickLength) model.player2Time
         , player2PartialTime =
-            iff (model.turn == Player2) (TypedTime.add model.player2PartialTime model.tickLength) TypedTime.zero
+            iff (isPlayerTurn Player2 model) (TypedTime.add model.player2PartialTime model.tickLength) TypedTime.zero
     }
 
 
@@ -110,7 +117,7 @@ timeCompensation model =
                     TypedTime.add TypedTime.zero
 
         apply player =
-            iff (model.turn == player) compensation identity
+            iff (isPlayerTurn player model) compensation identity
     in
     { model
         | player1Time = apply Player1 model.player1Time

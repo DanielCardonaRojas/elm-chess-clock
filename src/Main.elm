@@ -3,6 +3,7 @@ module Main exposing (..)
 import Browser
 import Data.ClockMode as ClockMode exposing (..)
 import Data.Player as Player exposing (Player(..))
+import Maybe.Extra as Maybe
 import Model exposing (..)
 import Msg exposing (..)
 import Platform.Cmd as Cmd
@@ -55,6 +56,7 @@ update msg model =
             Return.singleton model
                 |> Return.map Model.setTime
                 |> Return.map (Model.toggleSettings False)
+                |> Return.map (\m -> { m | paused = True, turn = Nothing })
 
         ShowSettings bool ->
             Return.singleton model
@@ -64,11 +66,12 @@ update msg model =
         NoOp ->
             Return.singleton model
 
-        SwitchPlayer ->
+        Moved player ->
             Return.singleton model
                 |> Return.map Model.timeCompensation
                 |> Return.map Model.incrementMoves
-                |> Return.map (\m -> { m | turn = Player.switch m.turn })
+                |> Return.map (\m -> { m | paused = iff (model.turn == Nothing) False model.paused })
+                |> Return.map (\m -> { m | turn = Maybe.map Player.switch m.turn |> Maybe.or (Just <| Player.switch player) })
 
         Tick ->
             Return.singleton model

@@ -1,11 +1,12 @@
 module Msg exposing (..)
 
 import Data.ClockMode exposing (TimeControl)
+import Data.Player exposing (Player)
 import TypedTime exposing (TypedTime)
 
 
 type Msg
-    = SwitchPlayer
+    = Moved Player
     | Pause
     | Resume
     | Tick

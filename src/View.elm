@@ -31,24 +31,69 @@ applicationUI : Model -> Element Msg
 applicationUI model =
     let
         canTapTile player =
-            model.turn == player && not model.paused
+            (model.turn == Nothing)
+                || (Model.isPlayerTurn player model && not model.paused)
     in
     el [ width fill, height fill, padding 20 ] <|
         column [ width fill, height fill, spacing 10 ]
             [ playerTimeTile
-                { isActive = canTapTile Player2
+                { isActive = Model.isPlayerTurn Player2 model
+                , canTap = canTapTile Player2
+                , player = Player2
                 , rotated = True
                 , remainingTime = Model.remainingTime model Player2
                 , moves = model.player2MoveCount
                 }
             , optionSection model
             , playerTimeTile
-                { isActive = canTapTile Player1
+                { isActive = Model.isPlayerTurn Player1 model
+                , canTap = canTapTile Player1
+                , player = Player1
                 , rotated = False
                 , remainingTime = Model.remainingTime model Player1
                 , moves = model.player1MoveCount
                 }
             ]
+
+
+playerTimeTile : { isActive : Bool, canTap : Bool, player : Player, rotated : Bool, remainingTime : String, moves : Int } -> Element Msg
+playerTimeTile { isActive, canTap, player, rotated, remainingTime, moves } =
+    Input.button
+        [ centerX
+        , rotate <| iff rotated 3.14156 0
+        , height <| fillPortion 2
+        , width fill
+        , Border.rounded 8
+        , Element.inFront <| el [ alignBottom, alignRight, padding 30 ] (text <| "Moves: " ++ String.fromInt moves)
+        , Background.color <| iff isActive (rgb255 187 120 38) (rgb 0.1 0.1 0.1)
+        , Font.color <| rgb 1 1 1
+        ]
+        { onPress = iff canTap (Just <| Moved player) Nothing
+        , label = el [ centerX, centerY, Font.size 48 ] (text remainingTime)
+        }
+
+
+pauseResumeButton : Bool -> Element Msg
+pauseResumeButton counting =
+    el [ centerX ] <|
+        image
+            [ Event.onClick <| iff counting Pause Resume
+            , width <| px 50
+            ]
+            { src = iff counting "../assets/pause.png" "../assets/play.png"
+            , description = "Pause button"
+            }
+
+
+settingsButton : Element Msg
+settingsButton =
+    image
+        [ Event.onClick <| ShowSettings True
+        , width <| px 50
+        ]
+        { src = "../assets/gear.png"
+        , description = "Settings button"
+        }
 
 
 settingsUI : Model -> Element Msg
@@ -75,6 +120,7 @@ settingsUI model =
                 , height fill
                 , spaceEvenly
                 , spacing 20
+                , padding 32
                 ]
                 [ el [ centerX, Font.extraBold ] <| text "Settings"
                 , Input.radioRow
@@ -85,7 +131,7 @@ settingsUI model =
                     , selected = Just model.clockMode.timeControl
                     , label = Input.labelAbove [ centerX ] (text "Time Control")
                     , options =
-                        [ Input.option Fisher (text "Fisher")
+                        [ Input.option Fisher (text "Fischer")
                         , Input.option Bronstein (text "Bronstein")
                         , Input.option Delay (text "Delay")
                         ]
@@ -156,47 +202,6 @@ settingsUI model =
 optionSection : Model -> Element Msg
 optionSection model =
     row [ centerX, spacing 20 ]
-        [ pauseResumeButton <| not model.paused
+        [ iff (model.turn == Nothing) none (pauseResumeButton <| not model.paused)
         , settingsButton
         ]
-
-
-playerTimeTile : { isActive : Bool, rotated : Bool, remainingTime : String, moves : Int } -> Element Msg
-playerTimeTile { isActive, rotated, remainingTime, moves } =
-    Input.button
-        [ Event.onClick <| iff isActive SwitchPlayer NoOp
-        , centerX
-        , rotate <| iff rotated 3.14156 0
-        , height <| fillPortion 2
-        , width fill
-        , Border.rounded 8
-        , Element.inFront <| el [ alignBottom, alignRight, padding 30 ] (text <| "Moves: " ++ String.fromInt moves)
-        , Background.color <| iff isActive (rgb255 187 120 38) (rgb 0.1 0.1 0.1)
-        , Font.color <| rgb 1 1 1
-        ]
-        { onPress = iff isActive (Just SwitchPlayer) Nothing
-        , label = el [ centerX, centerY, Font.size 48 ] (text remainingTime)
-        }
-
-
-pauseResumeButton : Bool -> Element Msg
-pauseResumeButton counting =
-    el [ centerX ] <|
-        image
-            [ Event.onClick <| iff counting Pause Resume
-            , width <| px 50
-            ]
-            { src = iff counting "../assets/pause.png" "../assets/play.png"
-            , description = "Pause button"
-            }
-
-
-settingsButton : Element Msg
-settingsButton =
-    image
-        [ Event.onClick <| ShowSettings True
-        , width <| px 50
-        ]
-        { src = "../assets/gear.png"
-        , description = "Settings button"
-        }
