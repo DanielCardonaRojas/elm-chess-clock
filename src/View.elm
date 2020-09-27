@@ -1,5 +1,6 @@
 module View exposing (..)
 
+import Colors
 import Data.ClockMode exposing (TimeControl(..))
 import Data.Player as Player exposing (Player(..))
 import Debug
@@ -22,7 +23,10 @@ view model =
             , Element.focusStyle { borderColor = Nothing, backgroundColor = Nothing, shadow = Nothing }
             ]
         }
-        [ inFront <| iff model.displaySettings (settingsUI model) none ]
+        [ inFront <| iff model.displaySettings (settingsUI model) none
+        , Font.color Colors.tarawera
+        , Font.size (scaled 1)
+        ]
     <|
         applicationUI model
 
@@ -64,12 +68,20 @@ playerTimeTile { isActive, canTap, player, rotated, remainingTime, moves } =
         , height <| fillPortion 2
         , width fill
         , Border.rounded 8
-        , Element.inFront <| el [ alignBottom, alignRight, padding 30 ] (text <| "Moves: " ++ String.fromInt moves)
-        , Background.color <| iff isActive (rgb255 187 120 38) (rgb 0.1 0.1 0.1)
+        , Element.inFront <|
+            el
+                [ alignBottom
+                , alignRight
+                , padding 30
+                , Font.size (scaled 2)
+                , Font.bold
+                ]
+                (text <| "Moves: " ++ String.fromInt moves)
+        , Background.color <| iff isActive Colors.caribeanGreen Colors.tarawera
         , Font.color <| rgb 1 1 1
         ]
         { onPress = iff canTap (Just <| Moved player) Nothing
-        , label = el [ centerX, centerY, Font.size 48 ] (text remainingTime)
+        , label = el [ centerX, centerY, Font.size (scaled 6) ] (text remainingTime)
         }
 
 
@@ -99,18 +111,16 @@ settingsButton =
 settingsUI : Model -> Element Msg
 settingsUI model =
     el
-        [ Background.color <| rgba255 100 100 100 0.8
+        [ Background.color <| withAlpha 0.85 <| Colors.tarawera
         , width fill
         , height fill
+        , padding 64
         ]
     <|
         el
             [ Background.color <| rgb255 255 255 255
             , centerX
             , centerY
-            , fill |> minimum 200 |> maximum 400 |> width
-            , padding 32
-            , shrink |> minimum 200 |> height
             , Border.rounded 8
             ]
         <|
@@ -122,7 +132,16 @@ settingsUI model =
                 , spacing 20
                 , padding 32
                 ]
-                [ el [ centerX, Font.extraBold ] <| text "Settings"
+                [ image
+                    [ Event.onClick <| ShowSettings False
+                    , width <| px 30
+                    , moveLeft 15
+                    , moveUp 15
+                    ]
+                    { src = "../assets/x-mark.png"
+                    , description = "close button"
+                    }
+                , el [ centerX, Font.extraBold, Font.size (scaled 3) ] <| text "Settings"
                 , Input.radioRow
                     [ padding 10
                     , spacing 20
@@ -131,9 +150,9 @@ settingsUI model =
                     , selected = Just model.clockMode.timeControl
                     , label = Input.labelAbove [ centerX ] (text "Time Control")
                     , options =
-                        [ Input.option Fisher (text "Fischer")
-                        , Input.option Bronstein (text "Bronstein")
-                        , Input.option Delay (text "Delay")
+                        [ Input.option Fisher (el [ Font.size (scaled -2) ] <| text "Fischer")
+                        , Input.option Bronstein (el [ Font.size (scaled -2) ] <| text "Bronstein")
+                        , Input.option Delay (el [ Font.size (scaled -2) ] <| text "Delay")
                         ]
                     }
                 , Input.slider
@@ -143,7 +162,7 @@ settingsUI model =
                             [ Element.width Element.fill
                             , Element.height (Element.px 2)
                             , Element.centerY
-                            , Background.color <| rgb255 100 100 100
+                            , Background.color Colors.tarawera
                             , Border.rounded 2
                             ]
                             Element.none
@@ -166,7 +185,7 @@ settingsUI model =
                             [ Element.width Element.fill
                             , Element.height (Element.px 2)
                             , Element.centerY
-                            , Background.color <| rgb255 100 100 100
+                            , Background.color Colors.tarawera
                             , Border.rounded 2
                             ]
                             Element.none
@@ -184,7 +203,7 @@ settingsUI model =
                     }
                 , Input.button
                     [ centerX
-                    , Background.color <| rgb255 180 50 60
+                    , Background.color Colors.caribeanGreen
                     , Border.rounded 8
                     , paddingXY 80 10
                     , Font.color <| rgb255 255 255 255
@@ -205,3 +224,15 @@ optionSection model =
         [ iff (model.turn == Nothing) none (pauseResumeButton <| not model.paused)
         , settingsButton
         ]
+
+
+scaled =
+    Element.modular 16 1.25 >> round
+
+
+withAlpha : Float -> Color -> Color
+withAlpha alpha color =
+    color
+        |> toRgb
+        |> (\c -> { c | alpha = alpha })
+        |> fromRgb
