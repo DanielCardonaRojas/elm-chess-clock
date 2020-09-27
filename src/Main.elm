@@ -1,6 +1,7 @@
 module Main exposing (..)
 
 import Browser
+import Data.ClockMode as ClockMode exposing (..)
 import Data.Player as Player exposing (Player(..))
 import Model exposing (..)
 import Msg exposing (..)
@@ -38,8 +39,30 @@ subscriptions model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        SetTimeControl timeControl ->
+            Return.singleton model
+                |> Return.map (\m -> { m | clockMode = ClockMode.updateTimeControl timeControl m.clockMode })
+
+        SetDelayCompensation delay ->
+            Return.singleton model
+                |> Return.map (\m -> { m | clockMode = ClockMode.updateCompensation delay m.clockMode })
+
+        ConfigureTime time ->
+            Return.singleton model
+                |> Return.map (Model.configureTime time)
+
+        ApplyConfiguration ->
+            Return.singleton model
+                |> Return.map Model.setTime
+                |> Return.map (Model.toggleSettings False)
+
+        ShowSettings bool ->
+            Return.singleton model
+                |> Return.map (\m -> { m | paused = True })
+                |> Return.map (Model.toggleSettings bool)
+
         NoOp ->
-            ( model, Cmd.none )
+            Return.singleton model
 
         SwitchPlayer ->
             Return.singleton model

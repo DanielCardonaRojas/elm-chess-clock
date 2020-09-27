@@ -12,7 +12,8 @@
             "elm/html": "1.0.0",
             "elm/time": "1.0.0",
             "jxxcarlson/elm-typed-time": "1.2.0",
-            "mdgriffith/elm-ui": "1.1.8"
+            "mdgriffith/elm-ui": "1.1.8",
+            "oaalto/time-values": "2.0.0"
         },
         "indirect": {
             "elm/json": "1.1.3",

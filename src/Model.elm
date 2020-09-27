@@ -1,8 +1,9 @@
 module Model exposing (..)
 
-import Data.ClockMode exposing (ClockMode, TimeControl(..))
+import Data.ClockMode as ClockMode exposing (ClockMode, TimeControl(..))
 import Data.Player exposing (Player(..))
 import String exposing (fromInt)
+import Time.Values as Time exposing (TimeValues)
 import TypedTime exposing (TypedTime, Unit(..), milliseconds, seconds)
 import Utils exposing (iff)
 
@@ -17,6 +18,7 @@ type alias Model =
     , player2MoveCount : Int
     , clockMode : ClockMode
     , tickLength : TypedTime
+    , displaySettings : Bool
     , paused : Bool
     }
 
@@ -29,11 +31,39 @@ initialModel minutes =
     , player1PartialTime = TypedTime.zero
     , player2PartialTime = TypedTime.zero
     , player1MoveCount = 0
+    , displaySettings = False
     , player2MoveCount = 0
-    , clockMode = { timeControl = Fisher, compensation = TypedTime.seconds 5 }
+    , clockMode =
+        { timeControl = Fisher
+        , compensation = TypedTime.seconds 5
+        , duration = TypedTime.minutes <| toFloat minutes
+        }
     , tickLength = TypedTime.milliseconds 100
     , paused = False
     }
+
+
+
+-- Computed properties
+
+
+clockConfigurationMinutes : Model -> Float
+clockConfigurationMinutes model =
+    TypedTime.toSeconds model.clockMode.duration |> round |> Time.fromSeconds |> .minutes |> toFloat
+
+
+clockTimeConfiguration : Model -> TimeValues
+clockTimeConfiguration model =
+    TypedTime.toSeconds model.clockMode.duration |> round |> Time.fromSeconds
+
+
+clockDelayConfiguration : Model -> TimeValues
+clockDelayConfiguration model =
+    TypedTime.toSeconds model.clockMode.compensation |> round |> Time.fromSeconds
+
+
+
+-- Updates
 
 
 remainingTime : Model -> Player -> String
@@ -88,23 +118,18 @@ timeCompensation model =
     }
 
 
+setTime : Model -> Model
+setTime model =
+    { model | player1Time = model.clockMode.duration, player2Time = model.clockMode.duration }
 
--- remainingTime : Model -> Player -> String
--- remainingTime model player =
---     let
---         convertToString time =
---             if TypedTime.lt time (seconds 30) then
---                 TypedTime.toString Milliseconds time
---             else
---                 TypedTime.toString Milliseconds time
---         calculate ticks partialTicks =
---             TypedTime.multiply (toFloat ticks) model.tickLength
---                 |> TypedTime.sub model.totalTime
---                 |> iff (model.clockMode.timeControl == Fisher) (TypedTime.add model.clockMode.compensation) identity
---                 |> convertToString
---     in
---     case player of
---         Player1 ->
---             calculate model.player1Ticks model.player1PartialTicks
---         Player2 ->
---             calculate model.player2Ticks model.player2PartialTicks
+
+configureTime : TypedTime -> Model -> Model
+configureTime time model =
+    { model
+        | clockMode = ClockMode.updateDuration time model.clockMode
+    }
+
+
+toggleSettings : Bool -> Model -> Model
+toggleSettings bool m =
+    { m | displaySettings = bool }
