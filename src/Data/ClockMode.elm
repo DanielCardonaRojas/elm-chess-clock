@@ -4,7 +4,7 @@ import TypedTime exposing (TypedTime, Unit(..))
 
 
 type TimeControl
-    = Fisher
+    = Fischer
     | Delay
     | Bronstein
 

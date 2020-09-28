@@ -16,3 +16,7 @@ caribeanGreen =
 
 tarawera =
     hex "#073B4C"
+
+
+paradisePink =
+    hex "#EF476F"

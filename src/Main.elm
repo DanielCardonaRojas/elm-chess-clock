@@ -30,7 +30,7 @@ init _ =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    if model.paused then
+    if model.outOfTime /= Nothing || model.paused then
         Sub.none
 
     else
@@ -70,12 +70,14 @@ update msg model =
             Return.singleton model
                 |> Return.map Model.timeCompensation
                 |> Return.map Model.incrementMoves
+                |> Return.map Model.resetPartialTime
                 |> Return.map (\m -> { m | paused = iff (model.turn == Nothing) False model.paused })
                 |> Return.map (\m -> { m | turn = Maybe.map Player.switch m.turn |> Maybe.or (Just <| Player.switch player) })
 
         Tick ->
             Return.singleton model
                 |> Return.map Model.incrementTime
+                |> Return.map Model.verifyOutofTime
 
         Pause ->
             Return.singleton model

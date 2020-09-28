@@ -33,35 +33,30 @@ view model =
 
 applicationUI : Model -> Element Msg
 applicationUI model =
-    let
-        canTapTile player =
-            (model.turn == Nothing)
-                || (Model.isPlayerTurn player model && not model.paused)
-    in
     el [ width fill, height fill, padding 20 ] <|
         column [ width fill, height fill, spacing 10 ]
-            [ playerTimeTile
-                { isActive = Model.isPlayerTurn Player2 model
-                , canTap = canTapTile Player2
-                , player = Player2
-                , rotated = True
-                , remainingTime = Model.remainingTime model Player2
-                , moves = model.player2MoveCount
-                }
+            [ playerTimeTile Player2 model
             , optionSection model
-            , playerTimeTile
-                { isActive = Model.isPlayerTurn Player1 model
-                , canTap = canTapTile Player1
-                , player = Player1
-                , rotated = False
-                , remainingTime = Model.remainingTime model Player1
-                , moves = model.player1MoveCount
-                }
+            , playerTimeTile Player1 model
             ]
 
 
-playerTimeTile : { isActive : Bool, canTap : Bool, player : Player, rotated : Bool, remainingTime : String, moves : Int } -> Element Msg
-playerTimeTile { isActive, canTap, player, rotated, remainingTime, moves } =
+playerTimeTile : Player -> Model -> Element Msg
+playerTimeTile player model =
+    let
+        canTapTile p =
+            (model.turn == Nothing)
+                || (Model.isPlayerTurn p model && not model.paused)
+
+        { isActive, canTap, ranOutOfTime, rotated, remainingTime, moves } =
+            { isActive = Model.isPlayerTurn player model
+            , canTap = canTapTile player
+            , ranOutOfTime = Maybe.map (\p -> p == player) model.outOfTime |> Maybe.withDefault False
+            , rotated = player == Player2
+            , remainingTime = Model.remainingTime model player
+            , moves = model.player2MoveCount
+            }
+    in
     Input.button
         [ centerX
         , rotate <| iff rotated 3.14156 0
@@ -77,7 +72,10 @@ playerTimeTile { isActive, canTap, player, rotated, remainingTime, moves } =
                 , Font.bold
                 ]
                 (text <| "Moves: " ++ String.fromInt moves)
-        , Background.color <| iff isActive Colors.caribeanGreen Colors.tarawera
+        , Colors.tarawera
+            |> iff isActive Colors.caribeanGreen
+            >> iff ranOutOfTime Colors.paradisePink
+            |> Background.color
         , Font.color <| rgb 1 1 1
         ]
         { onPress = iff canTap (Just <| Moved player) Nothing
@@ -150,7 +148,7 @@ settingsUI model =
                     , selected = Just model.clockMode.timeControl
                     , label = Input.labelAbove [ centerX ] (text "Time Control")
                     , options =
-                        [ Input.option Fisher (el [ Font.size (scaled -2) ] <| text "Fischer")
+                        [ Input.option Fischer (el [ Font.size (scaled -2) ] <| text "Fischer")
                         , Input.option Bronstein (el [ Font.size (scaled -2) ] <| text "Bronstein")
                         , Input.option Delay (el [ Font.size (scaled -2) ] <| text "Delay")
                         ]

@@ -16,6 +16,7 @@ type alias Model =
     , player2PartialTime : TypedTime
     , player1MoveCount : Int
     , player2MoveCount : Int
+    , outOfTime : Maybe Player
     , clockMode : ClockMode
     , tickLength : TypedTime
     , displaySettings : Bool
@@ -31,10 +32,11 @@ initialModel minutes =
     , player1PartialTime = TypedTime.zero
     , player2PartialTime = TypedTime.zero
     , player1MoveCount = 0
+    , outOfTime = Just Player1
     , displaySettings = True
     , player2MoveCount = 0
     , clockMode =
-        { timeControl = Fisher
+        { timeControl = Fischer
         , compensation = TypedTime.seconds 5
         , duration = TypedTime.minutes <| toFloat minutes
         }
@@ -91,43 +93,78 @@ incrementMoves model =
     }
 
 
+resetPartialTime : Model -> Model
+resetPartialTime model =
+    { model
+        | player1PartialTime = TypedTime.zero
+        , player2PartialTime = TypedTime.zero
+    }
+
+
 incrementTime : Model -> Model
 incrementTime model =
     { model
         | player1Time =
             iff (isPlayerTurn Player1 model) (TypedTime.sub model.player1Time model.tickLength) model.player1Time
         , player1PartialTime =
-            iff (isPlayerTurn Player1 model) (TypedTime.add model.player1PartialTime model.tickLength) TypedTime.zero
+            iff (isPlayerTurn Player1 model) (TypedTime.add model.player1PartialTime model.tickLength) model.player1PartialTime
         , player2Time =
             iff (isPlayerTurn Player2 model) (TypedTime.sub model.player2Time model.tickLength) model.player2Time
         , player2PartialTime =
-            iff (isPlayerTurn Player2 model) (TypedTime.add model.player2PartialTime model.tickLength) TypedTime.zero
+            iff (isPlayerTurn Player2 model) (TypedTime.add model.player2PartialTime model.tickLength) model.player2PartialTime
+    }
+
+
+verifyOutofTime : Model -> Model
+verifyOutofTime model =
+    { model
+        | outOfTime =
+            if TypedTime.lte model.player1Time TypedTime.zero then
+                Just Player1
+
+            else if TypedTime.lte model.player2Time TypedTime.zero then
+                Just Player2
+
+            else
+                Nothing
     }
 
 
 timeCompensation : Model -> Model
 timeCompensation model =
     let
-        compensation =
+        compensation elapsedTime =
             case model.clockMode.timeControl of
-                Fisher ->
+                Fischer ->
                     TypedTime.add model.clockMode.compensation
+
+                Bronstein ->
+                    elapsedTime
+                        |> TypedTime.sub model.clockMode.compensation
+                        |> (\diff ->
+                                iff (TypedTime.lte diff TypedTime.zero) model.clockMode.compensation elapsedTime
+                                    |> TypedTime.add
+                           )
 
                 _ ->
                     TypedTime.add TypedTime.zero
 
-        apply player =
-            iff (isPlayerTurn player model) compensation identity
+        apply player elapsedTime =
+            iff (isPlayerTurn player model) (compensation elapsedTime) identity
     in
     { model
-        | player1Time = apply Player1 model.player1Time
-        , player2Time = apply Player2 model.player2Time
+        | player1Time = apply Player1 model.player1PartialTime model.player1Time
+        , player2Time = apply Player2 model.player2PartialTime model.player2Time
     }
 
 
 setTime : Model -> Model
 setTime model =
-    { model | player1Time = model.clockMode.duration, player2Time = model.clockMode.duration }
+    { model
+        | player1Time = model.clockMode.duration
+        , player2Time = model.clockMode.duration
+        , outOfTime = Nothing
+    }
 
 
 configureTime : TypedTime -> Model -> Model
