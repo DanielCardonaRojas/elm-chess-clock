@@ -90,7 +90,7 @@ pauseResumeButton counting =
             [ Event.onClick <| iff counting Pause Resume
             , width <| px 50
             ]
-            { src = iff counting "../assets/pause.png" "../assets/play.png"
+            { src = iff counting "../assets/pause.svg" "../assets/play.svg"
             , description = "Pause button"
             }
 
@@ -101,7 +101,7 @@ settingsButton =
         [ Event.onClick <| ShowSettings True
         , width <| px 50
         ]
-        { src = "../assets/gear.png"
+        { src = "../assets/gear.svg"
         , description = "Settings button"
         }
 
@@ -136,7 +136,7 @@ settingsUI model =
                     , moveLeft 15
                     , moveUp 15
                     ]
-                    { src = "../assets/x-mark.png"
+                    { src = "../assets/x-mark.svg"
                     , description = "close button"
                     }
                 , el [ centerX, Font.extraBold, Font.size (scaled 3) ] <| text "Settings"
